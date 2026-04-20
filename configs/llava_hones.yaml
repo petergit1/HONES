@@ -1,0 +1,60 @@
+model:
+  name: llava
+  model_id: llava-hf/llava-1.5-7b-hf
+  dtype: auto          # auto | float16 | bfloat16 | float32
+  device_map: auto     # auto | none
+
+data:
+  data_file: data/merged_train2014_single_vqa_legible_ocr_all_captions.json
+  image_dir: data/original_images
+  discovery_split: data/splits/discovery.json
+  test_split: data/splits/test.json
+  dev_split: data/splits/development.json
+  discovery_limit: 5000
+  eval_limit: 3000
+  seed: 3407
+  datasets:
+    coco:
+      name: coco
+      data_file: data/merged_train2014_single_vqa_legible_ocr_all_captions.json
+      image_dir: data/original_images
+      dev_split: data/splits/development.json
+      test_split: data/splits/test.json
+    gqa:
+      name: gqa
+      data_file: data/ood/gqa/questions.json
+      image_dir: data/ood/gqa/images
+    textvqa:
+      name: textvqa
+      data_file: data/ood/textvqa/annotations.json
+      image_dir: data/ood/textvqa/images
+    flickr30k:
+      name: flickr30k
+      data_file: data/ood/flickr30k/captions.json
+      image_dir: data/ood/flickr30k/images
+
+run:
+  task: vqa            # vqa | ocr | caption | retrieval
+  output_dir: artifacts/llava/vqa
+  top_k_heads: 30      #K_h=30 for LLaVA-1.5-7B
+  top_neuron_ratio: 0.01
+  max_new_tokens: 24
+  retrieval_negatives: 49
+  ndcg_k: 5
+
+steering:
+  dataset: coco             # coco | gqa | textvqa | flickr30k
+  output_dir: artifacts/llava/vqa/steering/coco
+  dev_limit: 2000
+  test_limit: 3000
+  bank_topk: null
+  methods: [fixed_amp, grid_search, HONES_no_kl, HONES, rand_neuron]
+  always_eval_base: true
+  fixed_amp: 2.0
+  grid_amps: [0.5, 0.75, 1.0, 1.25, 1.5, 2.0]
+  epochs: 2
+  lr: 5.0e-4
+  grad_accum_steps: 4
+  l2_weight: 1.0e-5
+  clamp: 1.5
+
